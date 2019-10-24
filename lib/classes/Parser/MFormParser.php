@@ -423,7 +423,11 @@ class MFormParser
                     // create options
                     foreach ($value as $vKey => $vValue) {
                         $count++;
-                        $optElements .= $this->createOptionElement($item, $vKey, $vValue);
+                        $disabled = false;
+                        if (in_array($vKey, $item->getDisabledOptions())) {
+                            $disabled = true;
+                        }
+                        $optElements .= $this->createOptionElement($item, $vKey, $vValue, 'option', true, $disabled);
                     }
 
                     // create opt group element
@@ -434,7 +438,11 @@ class MFormParser
                     $optionElements .= $this->parseElement($groupElement, 'optgroup', true);
                 } else {
                     $count++;
-                    $optionElements .= $this->createOptionElement($item, $key, $value);
+                    $disabled = false;
+                    if (in_array($key, $item->getDisabledOptions())) {
+                        $disabled = true;
+                    }
+                    $optionElements .= $this->createOptionElement($item, $key, $value, 'option', true, $disabled);
                 }
             }
             // is size full
@@ -478,10 +486,11 @@ class MFormParser
      * @param $value
      * @param string $templateType
      * @param bool $selected
+     * @param bool $disabled
      * @return mixed
      * @author Joachim Doerr
      */
-    private function createOptionElement(MFormItem $item, $key, $value, $templateType = 'option', $selected = true)
+    private function createOptionElement(MFormItem $item, $key, $value, $templateType = 'option', $selected = true, $disabled = false)
     {
         // create element
         $element = new MFormElement();
@@ -504,6 +513,11 @@ class MFormParser
         if ($selected && ($key == $itemValue or ($item->getMode() == 'add' && $key == $item->getDefaultValue()))) {
             $element->setAttributes(' selected'); // add attribute selected
         }
+
+        if ($disabled) {
+            $element->setAttributes($element->attributes . ' disabled');
+        }
+
         // parse element
         return $this->parseElement($element, $templateType, true);
     }
@@ -633,121 +647,62 @@ class MFormParser
         // create templateElement object
         $templateElement = new MFormElement();
         $templateElement->setLabel($this->parseElement($this->createLabelElement($item), 'label', true));
+        $parameter = $item->getParameter();
+
+        if (is_array($parameter) && isset($parameter['types'])) {
+            $parameter['types'] = str_replace(' ', '', strtolower($parameter['types']));
+        }
 
         switch ($item->getType()) {
             default:
             case 'media':
-                $templateElement->setElement(rex_var_media::getWidget($item->getVarId()[0], 'REX_INPUT_MEDIA[' . $item->getVarId()[0] . ']', $item->getValue(), $item->getParameter()));
-                break;
-            case 'medialist':
-                $templateElement->setElement(rex_var_medialist::getWidget($item->getVarId()[0], 'REX_INPUT_MEDIALIST[' . $item->getVarId()[0] . ']', $item->getValue(), $item->getParameter()));
-                break;
-        }
+                $html = rex_var_media::getWidget($item->getVarId()[0], 'REX_INPUT_MEDIA[' . $item->getVarId()[0] . ']', $item->getValue(), $parameter);
 
-        // add classes for custom type
-        $templateType = $this->getDefaultTemplateType($item, $templateElement);
+                $dom = new DOMDocument();
+                @$dom->loadHTML(utf8_decode($html));
+                $inputs = $dom->getElementsByTagName('input');
 
-        // add to output element array
-        $this->elements[] = $this->parseElement($templateElement, $templateType);
-        return $this;
-    }
-
-    /**
-     * link, linklist
-     * @param MFormItem $item
-     * @return $this
-     * @author Joachim Doerr
-     */
-    private function generateCustomLinkElement(MFormItem $item)
-    {
-        // default manipulations
-        MFormItemManipulator::setVarAndIds($item); // transform ids for template usage
-
-        $item->setId(str_replace(array('_', ']', '['), '', rand(100, 999) . $item->getVarId()));
-
-        // create templateElement object
-        $templateElement = new MFormElement();
-        $templateElement->setLabel($this->parseElement($this->createLabelElement($item), 'label', true));
-
-        $html = rex_var_link::getWidget($item->getId(), 'REX_INPUT_VALUE' . $item->getVarId(), $item->getValue(), $item->getParameter());
-
-        $dom = new DOMDocument();
-        @$dom->loadHTML(utf8_decode($html));
-        $div = $dom->getElementsByTagName('div');
-
-        $attributes = $item->getAttributes();
-
-        $mediaFragment = $dom->createDocumentFragment();
-        $mediaFragment->appendXML("<a href=\"#\" class=\"btn btn-popup\" id=\"mform_media_{$item->getId()}\" title=\"\"><i class=\"rex-icon fa-file-o\"></i></a>");
-        $linkFragment = $dom->createDocumentFragment();
-        $linkFragment->appendXML("<a href=\"#\" class=\"btn btn-popup\" id=\"mform_extern_{$item->getId()}\" title=\"\"><i class=\"rex-icon fa-external-link\"></i></a>");
-        $mailtoFragment = $dom->createDocumentFragment();
-        $mailtoFragment->appendXML("<a href=\"#\" class=\"btn btn-popup\" id=\"mform_mailto_{$item->getId()}\" title=\"\"><i class=\"rex-icon fa-envelope-o\"></i></a>");
-        $telFragment = $dom->createDocumentFragment();
-        $telFragment->appendXML("<a href=\"#\" class=\"btn btn-popup\" id=\"mform_tel_{$item->getId()}\" title=\"\"><i class=\"rex-icon fa-phone\"></i></a>");
-
-        if ($div instanceof DOMNodeList) {
-            foreach ($div as $divItem) {
-                if ($divItem instanceof DOMElement && $divItem->hasChildNodes()) {
-                    $divItem->setAttribute('data-id', $item->getId());
-                    $divItem->setAttribute('data-clang', rex_clang::getCurrentId());
-                    $divItem->setAttribute('class', $divItem->getAttribute('class') . ' custom-link');
-                    /** @var DOMElement $childNode */
-                    foreach ($divItem->childNodes as $childNode) {
-                        if ($childNode->hasAttribute('class') && $childNode->getAttribute('class') == 'input-group-btn') {
-                            if ($childNode->hasChildNodes()) {
-
-                                if (!array_key_exists('data-intern', $attributes)) {
-                                    $attributes['data-intern'] = 'enable';
-                                }
-
-                                foreach ($childNode->childNodes as $node) {
-                                    if ($node instanceof DOMElement) {
-                                        if (strpos($node->getAttribute('onclick'), 'openLinkMap') !== false) {
-                                            $node->setAttribute('id', 'mform_link_' . $item->getId());
-                                            if ($attributes['data-intern'] == 'disable') {
-                                                $node->setAttribute('style', 'display:none');
-                                            }
-                                        }
-                                        if (strpos($node->getAttribute('onclick'), 'deleteREXLink') !== false) {
-                                            $node->setAttribute('id', 'mform_delete_' . $item->getId());
-                                        }
-                                        $node->removeAttribute('onclick');
-                                    }
-                                }
-
-                                if (!array_key_exists('data-extern', $attributes)) {
-                                    $attributes['data-extern'] = 'enable';
-                                }
-                                if (!array_key_exists('data-media', $attributes)) {
-                                    $attributes['data-media'] = 'enable';
-                                }
-
-                                if ($attributes['data-extern'] == 'enable') {
-                                    $childNode->insertBefore($linkFragment, $childNode->firstChild);
-                                }
-                                if ($attributes['data-media'] == 'enable') {
-                                    $childNode->insertBefore($mediaFragment, $childNode->firstChild);
-                                }
-                                if (array_key_exists('data-mailto', $attributes) && $attributes['data-mailto'] == 'enable') {
-                                    $childNode->insertBefore($mailtoFragment, $childNode->firstChild);
-                                }
-                                if (array_key_exists('data-tel', $attributes) && $attributes['data-tel'] == 'enable') {
-                                    $childNode->insertBefore($telFragment, $childNode->firstChild);
+                if ($inputs instanceof DOMNodeList) {
+                    foreach ($inputs as $input) {
+                        if ($input instanceof DOMElement) {
+                            if (is_array($item->getAttributes()) && sizeof($item->getAttributes()) > 0) {
+                                foreach ($item->getAttributes() as $key => $value) {
+                                    $input->setAttribute($key, $value);
                                 }
                             }
                         }
-                        if (($childNode->hasAttribute('class')
-                                && $childNode->getAttribute('class') == 'form-control')
-                            && ($childNode->hasAttribute('value')
-                                && $childNode->getAttribute('value') == '')) {
-                            $childNode->setAttribute('value', $item->getValue());
+                    }
+                }
+                break;
+            case 'imglist':
+            case 'medialist':
+                /** @var rex_var_medialist|rex_var_imglist $class */
+                $class = 'rex_var_' . $item->getType();
+                $html = $class::getWidget($item->getVarId()[0], 'REX_INPUT_MEDIALIST[' . $item->getVarId()[0] . ']', $item->getValue(), $parameter);
+
+                $dom = new DOMDocument();
+                @$dom->loadHTML(utf8_decode($html));
+                $selects = $dom->getElementsByTagName('select');
+
+                if ($selects instanceof DOMNodeList) {
+                    foreach ($selects as $select) {
+                        if ($select instanceof DOMElement) {
+                            if (is_array($item->getAttributes()) && sizeof($item->getAttributes()) > 0) {
+                                foreach ($item->getAttributes() as $key => $value) {
+                                    $select->setAttribute($key, $value);
+                                }
+                            }
                         }
                     }
-                    // $html = utf8_encode($divItem->C14N(false,true));
-                    $html = $divItem->C14N(false, true);
-                    break;
                 }
+                break;
+        }
+
+        $html = $dom->C14N(false, true);
+        if (strpos($html, '<body') !== false) {
+            preg_match("/<body>(.*)<\/body>/ism", $html, $matches);
+            if (isset($matches[1])) {
+                $html = $matches[1];
             }
         }
 
@@ -776,12 +731,54 @@ class MFormParser
         switch ($item->getType()) {
             default:
             case 'link':
-                $templateElement->setElement(rex_var_link::getWidget($item->getVarId()[0], 'REX_INPUT_LINK[' . $item->getVarId()[0] . ']', $item->getValue(), $item->getParameter()));
+                $html = rex_var_link::getWidget($item->getVarId()[0], 'REX_INPUT_LINK[' . $item->getVarId()[0] . ']', $item->getValue(), $item->getParameter());
+
+                $dom = new DOMDocument();
+                @$dom->loadHTML(utf8_decode($html));
+                $inputs = $dom->getElementsByTagName('input');
+
+                if ($inputs instanceof DOMNodeList) {
+                    foreach ($inputs as $input) {
+                        if ($input instanceof DOMElement) {
+                            if (is_array($item->getAttributes()) && sizeof($item->getAttributes()) > 0) {
+                                foreach ($item->getAttributes() as $key => $value) {
+                                    $input->setAttribute($key, $value);
+                                }
+                            }
+                        }
+                    }
+                }
                 break;
             case 'linklist':
-                $templateElement->setElement(rex_var_linklist::getWidget($item->getVarId()[0], 'REX_INPUT_LINKLIST[' . $item->getVarId()[0] . ']', $item->getValue(), $item->getParameter()));
+                $html = rex_var_linklist::getWidget($item->getVarId()[0], 'REX_INPUT_LINKLIST[' . $item->getVarId()[0] . ']', $item->getValue(), $item->getParameter());
+
+                $dom = new DOMDocument();
+                @$dom->loadHTML(utf8_decode($html));
+                $selects = $dom->getElementsByTagName('select');
+
+                if ($selects instanceof DOMNodeList) {
+                    foreach ($selects as $select) {
+                        if ($select instanceof DOMElement) {
+                            if (is_array($item->getAttributes()) && sizeof($item->getAttributes()) > 0) {
+                                foreach ($item->getAttributes() as $key => $value) {
+                                    $select->setAttribute($key, $value);
+                                }
+                            }
+                        }
+                    }
+                }
                 break;
         }
+
+        $html = $dom->C14N(false, true);
+        if (strpos($html, '<body') !== false) {
+            preg_match("/<body>(.*)<\/body>/ism", $html, $matches);
+            if (isset($matches[1])) {
+                $html = $matches[1];
+            }
+        }
+
+        $templateElement->setElement($html);
 
         // add classes for custom type
         $templateType = $this->getDefaultTemplateType($item, $templateElement);
@@ -790,6 +787,79 @@ class MFormParser
         $this->elements[] = $this->parseElement($templateElement, $templateType);
         return $this;
     }
+
+
+    /**
+     * link, linklist
+     * @param MFormItem $item
+     * @return $this
+     * @author Joachim Doerr
+     */
+    private function generateCustomLinkElement(MFormItem $item)
+    {
+        // default manipulations
+        MFormItemManipulator::setVarAndIds($item); // transform ids for template usage
+
+        foreach (array('intern'=>'enable','extern'=>'enable','media'=>'enable','mailto'=>'enable','tel'=>'disable') as $key => $value) {
+            $value = (((isset($item->getAttributes()['data-' . $key])) ? $item->getAttributes()['data-' . $key] : $value) == 'enable');
+            $key = ($key == 'extern') ? 'external' : $key;
+            $key = ($key == 'tel') ? 'phone' : $key;
+            $item->setParameter(array_merge($item->getParameter(), array($key => $value)));
+        }
+
+        $item->setId(str_replace(array('_', ']', '['), '', rand(100, 999) . $item->getVarId()));
+
+        // create templateElement object
+        $templateElement = new MFormElement();
+        $templateElement->setLabel($this->parseElement($this->createLabelElement($item), 'label', true));
+
+        $html = rex_var_custom_link::getWidget($item->getId(), 'REX_INPUT_VALUE' . $item->getVarId(), $item->getValue(), $item->getParameter(), false);
+
+        $dom = new DOMDocument();
+        @$dom->loadHTML(utf8_decode($html));
+
+        $div = $dom->getElementsByTagName('div');
+
+        if ($div instanceof DOMNodeList) {
+            foreach ($div as $divItem) {
+                if ($divItem instanceof DOMElement && $divItem->hasChildNodes()) {
+                    $divItem->setAttribute('data-id', $item->getId());
+                    $divItem->setAttribute('data-clang', rex_clang::getCurrentId());
+                    $divItem->setAttribute('class', $divItem->getAttribute('class') . ' custom-link');
+                    /** @var DOMElement $childNode */
+                    foreach ($divItem->childNodes as $childNode) {
+                        if (($childNode->hasAttribute('class')
+                                && $childNode->getAttribute('class') == 'form-control')
+                            && ($childNode->hasAttribute('value')
+                                && $childNode->getAttribute('value') == '')) {
+                            $childNode->setAttribute('value', $item->getValue());
+                            if (is_array($item->getAttributes()) && sizeof($item->getAttributes()) > 0) {
+                                foreach ($item->getAttributes() as $key => $value) {
+                                    $childNode->setAttribute($key, $value);
+                                }
+                            }
+                        }
+                    }
+                    // $html = utf8_encode($divItem->C14N(false,true));
+                    $html = $divItem->C14N(false, true);
+                    if (strpos($html, '<body') !== false) {
+                        preg_match("/<body>(.*)<\/body>/ism", $html, $matches);
+                        if (isset($matches[1])) {
+                            $html = $matches[1];
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        $templateElement->setElement($html);
+        // add classes for custom type
+        $templateType = $this->getDefaultTemplateType($item, $templateElement);
+        // add to output element array
+        $this->elements[] = $this->parseElement($templateElement, $templateType);
+        return $this;
+    }
+
 
     /**
      * @param MFormItem[] $items
@@ -808,6 +878,11 @@ class MFormParser
                         break;
                     case 'close-fieldset':
                         $this->closeFieldset();
+                        break;
+
+                    // TODO
+                    case 'start-group-fieldset':
+                    case 'close-group-fieldset':
                         break;
 
                     // TABS
@@ -838,13 +913,26 @@ class MFormParser
                         $this->closeCollapseGroup($item);
                         break;
 
-
+                    // FORM ELEMENTS
                     case 'html':
                     case 'headline':
                     case 'description':
                     case 'alert':
                         $this->generateLineElement($item);
                         break;
+                    case 'color':
+                    case 'email':
+                    case 'url':
+                    case 'tel':
+                    case 'search':
+                    case 'number':
+                    case 'range':
+                    case 'date':
+                    case 'time':
+                    case 'datetime':
+                    case 'datetime-local':
+                    case 'month':
+                    case 'week':
                     case 'text':
                     case 'hidden':
                     case 'text-readonly':
@@ -870,11 +958,13 @@ class MFormParser
                     case 'linklist':
                         $this->generateLinkElement($item);
                         break;
+                    case 'customlink':
                     case 'custom-link':
                         $this->generateCustomLinkElement($item);
                         break;
                     case 'media':
                     case 'medialist':
+                    case 'imglist':
                         $this->generateMediaElement($item);
                         break;
                 }
@@ -998,6 +1088,9 @@ class MFormParser
      */
     private function parseElement(MFormElement $element, $templateType, $subPath = false)
     {
+        if (is_array($element->value)) {
+            $element->value = '';
+        }
         return str_replace(
             array_merge(array(' />'), $element->getKeys()),
             array_merge(array('/>'), $element->getValues()),

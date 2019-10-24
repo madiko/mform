@@ -65,6 +65,11 @@ class MFormItem
     /**
      * @var array
      */
+    public $disabledOptions = array();
+
+    /**
+     * @var array
+     */
     public $parameter = array();
 
     /**
@@ -101,6 +106,11 @@ class MFormItem
      * @var integer
      */
     public $groupCount;
+
+    /**
+     * @var string
+     */
+    public $groupKey;
 
     /**
      * @var string
@@ -322,6 +332,26 @@ class MFormItem
 
     /**
      * @return array
+     * @author Joachim Doerr
+     */
+    public function getDisabledOptions()
+    {
+        return $this->disabledOptions;
+    }
+
+    /**
+     * @param array $disabledOptions
+     * @return MFormItem
+     * @author Joachim Doerr
+     */
+    public function setDisabledOptions($disabledOptions)
+    {
+        $this->disabledOptions = $disabledOptions;
+        return $this;
+    }
+
+    /**
+     * @return array
      */
     public function getParameter()
     {
@@ -467,6 +497,26 @@ class MFormItem
     public function setGroupCount($groupCount)
     {
         $this->groupCount = $groupCount;
+        return $this;
+    }
+
+    /**
+     * @return string
+     * @author Joachim Doerr
+     */
+    public function getGroupKey()
+    {
+        return $this->groupKey;
+    }
+
+    /**
+     * @param string $groupKey
+     * @return MFormItem
+     * @author Joachim Doerr
+     */
+    public function setGroupKey($groupKey)
+    {
+        $this->groupKey = $groupKey;
         return $this;
     }
 

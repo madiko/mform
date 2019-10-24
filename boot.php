@@ -5,6 +5,12 @@
  * @license MIT
  */
 
+if (rex_addon::exists('yform') &&
+    rex_addon::get('yform')->isAvailable() &&
+    rex_plugin::get('yform', 'manager')->isAvailable()) {
+    rex_yform::addTemplatePath(rex_path::addon('mform', 'data/ytemplates'));
+}
+
 if (rex::isBackend()) {
     // check theme css is exists
     MFormThemeHelper::themeBootCheck(rex_addon::get('mform')->getConfig('mform_theme'));
@@ -27,8 +33,11 @@ if (rex::isBackend()) {
     // add toggle files
     rex_view::addCssFile($this->getAssetsUrl('toggle/toggle.css'));
     rex_view::addJsFile($this->getAssetsUrl('toggle/toggle.js'));
+    // widgets
+    rex_view::addCssFile($this->getAssetsUrl('css/imglist.css'));
+    rex_view::addJsFile($this->getAssetsUrl('js/imglist.js'));
     // add mform js
-    rex_view::addJsFile($this->getAssetsUrl('mform.js?v=' . $this->getVersion()));
+    rex_view::addJsFile($this->getAssetsUrl('mform.js'));
 
     // reset mblock page count
     $_SESSION['mform_count'] = 0;

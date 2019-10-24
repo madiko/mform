@@ -33,6 +33,7 @@ mform_example_base_select = Select- und Multiselect-Elemente
 mform_example_base_checkbox = Checkbox und Radio-Elmente
 mform_example_base_inline = Strukturelle Inline-Elemente
 mform_example_base_system = System-Button-Elemente
+mform_example_base_widgets = MForm-Widget-Elemente
 mform_example_extended_attribute_method = Attributes Method
 mform_example_extended_options_method = Options Method
 mform_example_extended_parameter_method = Parameter Method
@@ -52,3 +53,18 @@ mform_example_description_community = Later
 mform_github = MForm bei FOR - go to github
 
 mform_redactor_profile_create_success = Redactor Profile "%s" wurde erfolgreich angelegt, bitte Seite reloaden!
+
+var_extern_link = Externe URL verlinken
+var_mailto_link = Email verlinken
+var_phone_link = Telefonnummer verlinken
+
+yform_values_custom_link_description = CustomLink-Widget aus mform. Stellt ein Link-Widget für mehrere Link-Typen bereit. Medien-, externe, interne und E-Mail- Links
+yform_values_custom_link_media = Media-Link Button
+yform_values_custom_link_media_types = Medien-Typen (komma-getrennt)
+yform_values_custom_link_media_category = Medien-Kategorie (ID)
+yform_values_custom_link_external = Extern-Link Button
+yform_values_custom_link_mailto = Mailto-Link button
+yform_values_custom_link_intern = Interner-Link Button
+yform_values_custom_link_link_category = Link-Kategorie
+yform_values_custom_link_phone = Telefon-Link Button
+yform_values_imagelist_description = Bildauswahl mit direkter Darstellung / drag & drop

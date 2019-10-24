@@ -33,6 +33,7 @@ mform_example_base_select = Select and multiselect elements
 mform_example_base_checkbox = Checkbox and radio elements
 mform_example_base_inline = Structured inline elements
 mform_example_base_system = System button elements
+mform_example_base_widgets = MForm-Widget-element
 mform_example_extended_attribute_method = Attributes method
 mform_example_extended_options_method = Options method
 mform_example_extended_parameter_method = Parameter method
@@ -52,3 +53,17 @@ mform_example_description_community = Later
 mform_github = MForm FOR – Github Repository
 
 mform_redactor_profile_create_success = Redactor profile "%s" was successful created, please reload!
+
+var_extern_link = Link to extern url
+var_mailto_link = Link to email
+var_phone_link = Link to phonenumber
+
+yform_values_custom_link_description = CustomLink-widget från mform. Tillhandahåller en länk-widget för flera länk typer. Media-, externa-, interna- och e-postlänkar
+yform_values_custom_link_media = Media-link button
+yform_values_custom_link_media_types = Medietyper (kommaseparerade)
+yform_values_custom_link_media_category = Mediekategori (ID)
+yform_values_custom_link_external = Extern-link button
+yform_values_custom_link_mailto = Mailto-link button
+yform_values_custom_link_intern = Redaxo internal-link button
+yform_values_custom_link_link_category = Länk-kategori
+yform_values_imagelist_description = Bildval med direkt visning / dra och släpp

@@ -1,7 +1,49 @@
 # MForm - REDAXO Addon für Modul-Input-Formulare
 
-### Version 5.2.0
+### Version 5.3.2
+* Docs for custom link rex_form @dpf-dd, @skerbis
+* Fixed: https://github.com/FriendsOfREDAXO/mform/issues/171
+* Description Style fix @IngoWinter
 
+
+### Version 5.3.1
+* fixed: JSON-Values could not be used in 5.3
+
+### Version 5.3
+
+* added custom link as widget
+* exchange custom link for yform and rex_form
+* added image list widget for mfrom, rex_form and yform 
+
+### Version 5.2.5
+
+* add possibility to disable select options
+* fix fieldset and grouping issues
+
+### Version 5.2.4
+
+* re-add special input types support
+
+### Version 5.2.3
+
+* removed tab history
+
+### Version 5.2.2
+
+* Parameter must be an array warning fix
+
+### Version 5.2.1
+
+* fixed: Media-Button Parameter type space
+* Link-Title for Custom-Link Buttons added
+* Attributes for media- and link-elements added, which allows validation via Parsley
+* fixed: c14n html body wrapping removed
+
+Changes: 
+
+* now uses includeCurrentPageSubPath to show pages @christophboecker
+* Cache buster will be added by rex core @staabm
+* init.js simplified @staabm
 
 
 ### Version 5.2.0 pre-release
